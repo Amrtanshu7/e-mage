@@ -1,0 +1,23 @@
+# Node
+node_modules/
+npm-debug.log
+
+# React
+frontend/node_modules/
+build/
+dist/
+
+# C++
+cpp-service/build/
+cpp-service/bin/
+*.o
+*.out
+
+# macOS
+.DS_Store
+
+# Docker
+*.pid
+
+# VS Code
+.vscode/
