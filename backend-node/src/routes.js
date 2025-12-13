@@ -1,11 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const { testApi } = require("./controllers");
+const upload = require("./middleware/upload");
 
-const { backendUp } = require("./controllers");
-
-const {callCppService } = require("./controllers");
+const {callCppService, uploadImage, backendUp,testApi } = require("./controllers");
 
 router.get("/test", testApi);
 
@@ -13,4 +11,5 @@ router.get("/backend", backendUp);
 
 router.post("/call-cpp", callCppService);
 
+router.post("/upload",upload.single("image"),uploadImage);
 module.exports = router;

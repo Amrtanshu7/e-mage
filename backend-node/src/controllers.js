@@ -22,6 +22,30 @@ exports.callCppService = async (req,res) => {
     }
 };
 
+exports.uploadImage = async (req,res) => {
+    console.log("image upload request received ");
+
+    if(!req.file) {
+        console.error("no file uploaded");
+        return res.status(400).json({ message: "No image uploaded "});
+    }
+
+    console.log("image received :");
+    console.log({
+        originalName: req.file.originalname,
+        filename: req.file.filename,
+        path: req.file.path,
+        size: req.file.size
+    });
+
+    res.json({
+        message:"Image uploaded successfully",
+        file: {
+            filename: req.file.filename,
+            path: req.file.path
+        }
+    });
+};
 
 exports.testApi = (req,res) =>{
     res.json({
