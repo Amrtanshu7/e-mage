@@ -3,8 +3,15 @@ project(cpp_service)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include_directories(include)
+find_package(OpenCV REQUIRED)
+
+include_directories(
+    include
+    ${OpenCV_INCLUDE_DIRS}
+)
 
 add_executable(cpp_service
     src/main.cpp
 )
+
+target_link_libraries(cpp_service ${OpenCV_LIBS})

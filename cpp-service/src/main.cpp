@@ -1,7 +1,13 @@
 #include <iostream>
 #include "httplib.h"
+#include <opencv2/opencv.hpp>
+#include <vector>
+
+
 using namespace std;
 using namespace httplib;
+using namespace cv;
+
 
 int main()
 {
@@ -17,9 +23,44 @@ int main()
 
         cout<<"C++ received POST /process-image image data"<<endl;
         cout<<"Bytes received :" << req.body.size() <<endl;
+
+        //step 1: convert request body to buffer 
+
+        vector<uchar> inputBytes(req.body.begin(),req.body.end());
+
+        //step 2: Decode image from bytes
+
+        Mat inputImage = imdecode(inputBytes,IMREAD_COLOR); 
+
+        if(inputImage.empty())
+        {
+            cout<<"failed to decode image"<<endl;
+
+            res.status = 400;
+            res.set_content("Invalid image data","text/plain");
+            return;
+        }
         
-        //echo the same bytes back for now, just for verifying purposes 
-        res.set_content(req.body,"application/octet-stream");
+        cout<<"image decoded successfully"<<endl;
+
+        //step 3: Convert image to grayscale
+
+        Mat grayImage;
+        cvtColor(inputImage,grayImage,COLOR_BGR2GRAY);
+
+        //step 4: encode processed image back to bytes 
+
+        vector<uchar> outputBytes;
+        imencode(".jpg",grayImage,outputBytes);
+
+        cout<<"processed image bytes:"<<outputBytes.size() << endl;
+
+        //step 5:send the binary response
+
+        res.set_content(reinterpret_cast<const char*>(outputBytes.data()),
+                        outputBytes.size(),
+                        "application/octet-stream"
+                    );
 
         cout<<"c++ response sent " << endl;
     });
