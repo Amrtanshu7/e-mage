@@ -24,6 +24,14 @@ int main()
         cout<<"C++ received POST /process-image image data"<<endl;
         cout<<"Bytes received :" << req.body.size() <<endl;
 
+        string filter = "grayscale";
+        auto it = req.headers.find("X-Image-Filter");
+        if (it != req.headers.end()) {
+            filter = it->second;
+        }
+
+        cout<<"requested filter:"<< filter << endl;
+
         //step 1: convert request body to buffer 
 
         vector<uchar> inputBytes(req.body.begin(),req.body.end());
@@ -43,15 +51,30 @@ int main()
         
         cout<<"image decoded successfully"<<endl;
 
-        //step 3: Convert image to grayscale
+        //step 3: Convert image according to filter, by default grayscale
 
-        Mat grayImage;
-        cvtColor(inputImage,grayImage,COLOR_BGR2GRAY);
+        Mat processedImage;
+        if (filter == "grayscale") {
+            cvtColor(inputImage, processedImage, COLOR_BGR2GRAY);
+        }
+        else if (filter == "blur") {
+            GaussianBlur(inputImage, processedImage , Size(15,15),0);
+        }
+        else if (filter == "edges") {
+            Mat gray;
+            cvtColor(inputImage , gray, COLOR_BGR2GRAY);
+            Canny(gray,processedImage,50, 150);
+        }
+        else{
 
+            cout<<"Unknown filter , default:grayscale"<<endl;
+            cvtColor(inputImage,processedImage,COLOR_BGR2GRAY);
+        }
+        
         //step 4: encode processed image back to bytes 
 
         vector<uchar> outputBytes;
-        imencode(".jpg",grayImage,outputBytes);
+        imencode(".jpg",processedImage,outputBytes);
 
         cout<<"processed image bytes:"<<outputBytes.size() << endl;
 

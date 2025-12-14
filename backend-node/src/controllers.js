@@ -4,9 +4,10 @@ const path = require("path");
 const axios = require("axios");
 const CPP_SERVICE_URL = "http://localhost:8000";
 
-
 exports.uploadAndSendToCpp = async (req,res) => {
     console.log("upload and send to c++ request received ");
+    const filterType = req.query.filter || "grayscale";
+    console.log("requested filter:", filterType);
 
     if(!req.file)
     {
@@ -28,7 +29,8 @@ exports.uploadAndSendToCpp = async (req,res) => {
             {
                 headers: 
                 {
-                    "Content-Type": "application/octet-stream"
+                    "Content-Type": "application/octet-stream",
+                    "X-Image-Filter": filterType
                 },
                 responseType: "arraybuffer"
             }
