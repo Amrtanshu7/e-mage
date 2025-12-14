@@ -22,23 +22,30 @@ exports.uploadAndSendToCpp = async (req,res) => {
     console.log("Image buffer size(bytes):",imageBuffer.length);
 
     try{
-        const cppResponse = axios.post(
+        const cppResponse = await axios.post(
             `${CPP_SERVICE_URL}/process-image`,
             imageBuffer,
             {
-                headers: {
+                headers: 
+                {
                     "Content-Type": "application/octet-stream"
-                }
+                },
+                responseType: "arraybuffer"
             }
         );
+
+        const returnedBuffer = Buffer.from(cppResponse.data);
+
+        console.log("bytes received back from c++:", returnedBuffer.length);
 
         console.log("C++ responded successfully");
 
         res.json({
-            message: "Image sent to c++ successfully",
+            message: "Binary round-trip completed",
             bufferSize: imageBuffer.length,
-            cppResponse: cppResponse.data
+            cppResponse: returnedBuffer.length
         });
+        
     } catch (err) {
         console.error("error sending image to c++:",err.message);
         res.status(500).json({message:" Failed to send image to C++"});

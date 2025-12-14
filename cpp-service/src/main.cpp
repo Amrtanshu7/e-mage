@@ -17,8 +17,9 @@ int main()
 
         cout<<"C++ received POST /process-image image data"<<endl;
         cout<<"Bytes received :" << req.body.size() <<endl;
-
-        res.set_content("Image bytes received ","text/plain");
+        
+        //echo the same bytes back for now, just for verifying purposes 
+        res.set_content(req.body,"application/octet-stream");
 
         cout<<"c++ response sent " << endl;
     });
