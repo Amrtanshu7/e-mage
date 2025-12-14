@@ -34,21 +34,25 @@ exports.uploadAndSendToCpp = async (req,res) => {
             }
         );
 
-        const returnedBuffer = Buffer.from(cppResponse.data);
+        const processedBuffer = Buffer.from(cppResponse.data);
 
-        console.log("bytes received back from c++:", returnedBuffer.length);
+        console.log("bytes received back from c++:", processedBuffer.length);
+
+        /* Send processed image back to client */
+
+        res.set({
+            "Content-Type": "image/jpeg",
+            "Content-Disposition": "attachement; filename=processed.jpg",
+            "Content-Length": processedBuffer.length
+        });
+
+        res.send(processedBuffer);
 
         console.log("C++ responded successfully");
 
-        res.json({
-            message: "Binary round-trip completed",
-            bufferSize: imageBuffer.length,
-            cppResponse: returnedBuffer.length
-        });
-        
     } catch (err) {
         console.error("error sending image to c++:",err.message);
-        res.status(500).json({message:" Failed to send image to C++"});
+        res.status(500).json({message:" image processing failed "});
     }
 };
 
