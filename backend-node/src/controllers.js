@@ -1,4 +1,49 @@
 const { processImage } = require("./services/cppClient");
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
+const CPP_SERVICE_URL = "http://localhost:8000";
+
+
+exports.uploadAndSendToCpp = async (req,res) => {
+    console.log("upload and send to c++ request received ");
+
+    if(!req.file)
+    {
+        return res.status(400).json ({message: "No image uploaded"});
+    }
+
+    const imagePath = path.join(__dirname,"..",req.file.path);
+
+    console.log("reading image from disk:",imagePath);
+
+    const imageBuffer = fs.readFileSync(imagePath);
+
+    console.log("Image buffer size(bytes):",imageBuffer.length);
+
+    try{
+        const cppResponse = axios.post(
+            `${CPP_SERVICE_URL}/process-image`,
+            imageBuffer,
+            {
+                headers: {
+                    "Content-Type": "application/octet-stream"
+                }
+            }
+        );
+
+        console.log("C++ responded successfully");
+
+        res.json({
+            message: "Image sent to c++ successfully",
+            bufferSize: imageBuffer.length,
+            cppResponse: cppResponse.data
+        });
+    } catch (err) {
+        console.error("error sending image to c++:",err.message);
+        res.status(500).json({message:" Failed to send image to C++"});
+    }
+};
 
 exports.callCppService = async (req,res) => {
     

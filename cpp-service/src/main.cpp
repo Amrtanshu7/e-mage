@@ -15,10 +15,12 @@ int main()
 
     server.Post("/process-image",[](const Request& req,Response& res){
 
-        cout<<"C++ received POST /process-image"<<endl;
-        cout<<"Payload:" << req.body <<endl;
-        res.set_content("Image processed (dummy response)","text/plain");
-        cout<<"c++ sent dummy response " << endl;
+        cout<<"C++ received POST /process-image image data"<<endl;
+        cout<<"Bytes received :" << req.body.size() <<endl;
+
+        res.set_content("Image bytes received ","text/plain");
+
+        cout<<"c++ response sent " << endl;
     });
 
     cout<<"C++ service running on port 8000...."<<endl;
