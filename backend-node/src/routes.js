@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
+const authMiddleware = require("../src/middleware/authMiddleware");
 const upload = require("./middleware/upload");
 
 const {callCppService, uploadImage, backendUp,testApi,uploadAndSendToCpp } = require("./controllers");
@@ -13,6 +14,6 @@ router.post("/call-cpp", callCppService);
 
 router.post("/upload",upload.single("image"),uploadImage);
 
-router.post("/upload-to-cpp",upload.single("image"),uploadAndSendToCpp);
+router.post("/upload-to-cpp",authMiddleware,upload.single("image"),uploadAndSendToCpp);
 
 module.exports = router;
