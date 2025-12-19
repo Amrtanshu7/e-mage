@@ -1,4 +1,6 @@
 const Image = require("../models/Image");
+const path = require("path");
+const fs = require("fs");
 
 exports.getUserImages = async(req,res) => {
     try{
@@ -15,4 +17,45 @@ exports.getUserImages = async(req,res) => {
         res.status(500).json({message:"Failed to fetch images"});
     }
 };
+
+exports.downloadImage = async (req, res) => {
+    try{
+        console.log("download request received ");
+        const userId = req.user.userId;
+        const imageId = req.params.id;
+
+        console.log("userid:",userId);
+        console.log("imageId:",imageId);
+
+        const image = await Image.findOne({
+            _id: imageId,
+            userId
+        });
+
+        if(!image){
+            console.log("iamge not found in db or doesnt belong to this user");
+            return res.status(404).json({
+                message: "Image not found"
+            });
+        }
+        
+        console.log("image found in db");
+        console.log("Processed image path (DB):", image.processedImagePath);
+
+        const filePath = path.join(__dirname,"..","..",image.processedImagePath);
+
+        console.log("Resolved absolute file path:", filePath);
+
+        if(!fs.existsSync(filePath)) {
+            console.log("File does not exist on disk");
+            return res.status(404).json({message: "Processed image not found"});
+        }
+        
+        console.log("sending file for download ");
+        res.download(filePath);
+    } catch(err) {
+        console.error("Download error:",err.message);
+        res.status(500).json({message: "Failed to download image"});
+    }
+}
 
