@@ -3,9 +3,11 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 const CPP_SERVICE_URL = "http://localhost:8000";
+const Image = require("../src/models/Image")
 
 exports.uploadAndSendToCpp = async (req,res) => {
     console.log("upload and send to c++ request received ");
+    const userId = req.user.userId;
     const filterType = req.query.filter || "grayscale";
     console.log("requested filter:", filterType);
 
@@ -13,14 +15,32 @@ exports.uploadAndSendToCpp = async (req,res) => {
     {
         return res.status(400).json ({message: "No image uploaded"});
     }
+    
+    //original image
 
-    const imagePath = path.join(__dirname,"..",req.file.path);
+    const originalImagePath = req.file.path;
+    console.log("image uploaded by user:",userId);
+    console.log("original image path:",originalImagePath);
+
+    //absolute path for reading
+    const imagePath = path.join(__dirname,"..",originalImagePath);
 
     console.log("reading image from disk:",imagePath);
 
     const imageBuffer = fs.readFileSync(imagePath);
 
     console.log("Image buffer size(bytes):",imageBuffer.length);
+
+    //prepare processed image path
+
+    const processedDir = path.join("uploads","processed");
+    if( !fs.existsSync(processedDir))
+    {
+        fs.mkdirSync(processedDir, { recursive : true});
+    }
+
+    const processedImageFilename = `processed-${Date.now()}.jpg`;
+    const processedImagePath = path.join(processedDir,processedImageFilename);
 
     try{
         const cppResponse = await axios.post(
@@ -39,6 +59,22 @@ exports.uploadAndSendToCpp = async (req,res) => {
         const processedBuffer = Buffer.from(cppResponse.data);
 
         console.log("bytes received back from c++:", processedBuffer.length);
+
+        //save the processed image 
+        fs.writeFileSync(processedImagePath, processedBuffer);
+        console.log("processed image saved at:", processedImagePath);
+
+        //save metadata to db
+
+        const imageDoc = new Image({
+            userId,
+            originalImagePath,
+            processedImagePath,
+            filterType
+        });
+
+        await imageDoc.save();
+        console.log("image metadata saved for user:", userId);
 
         /* Send processed image back to client */
 
