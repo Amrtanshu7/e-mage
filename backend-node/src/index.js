@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const routes = require("./routes");
 const authRoutes = require("./routes/authRoutes");
+const imageRoutes = require("./routes/imageRoutes");
 const app  = express();
 
 //middleware
@@ -16,6 +17,7 @@ connectDB();
 //routes
 app.use("/api",routes);
 app.use("/auth",authRoutes);
+app.use("/api",imageRoutes);
 
 app.get("/",(req,res)=>{
     res.send("Backend up!");
