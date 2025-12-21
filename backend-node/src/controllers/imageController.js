@@ -59,3 +59,57 @@ exports.downloadImage = async (req, res) => {
     }
 }
 
+exports.deleteImage = async (req,res) => {
+    try{
+        console.log("delete image request received ");
+
+        const userId = req.user.userId;
+        const imageId = req.params.id;
+
+        console.log("user id:",userId);
+        console.log("image id:",imageId);
+
+        const image = await Image.findOne({
+            _id: imageId,
+            userId
+        });
+
+        if(!image){
+            console.log("image not found or not owned by user");
+            return res.status(404).json({message: "Image not found"});
+        }
+
+        console.log("image found in db");
+        console.log("db original path:",image.originalImagePath);
+        console.log("db processedImagePath", image.processedImagePath);
+
+        console.log("__dirname:",__dirname);
+
+        const originalPath = path.join(__dirname,"..","..",image.originalImagePath);
+        const processedPath = path.join(__dirname,"..","..",image.processedImagePath);
+
+        console.log("Resolved originalPath:", originalPath);
+        console.log("Resolved processedPath:", processedPath);
+
+        if(fs.existsSync(originalPath))
+        {
+            fs.unlinkSync(originalPath);
+            console.log("deleted original image:",originalPath);
+        }
+
+        if(fs.existsSync(processedPath)) {
+            fs.unlinkSync(processedPath);
+            console.log("Deleted processed image :",processedPath);
+        }
+
+        await Image.deleteOne({_id: imageId});
+
+        console.log("image record deleted from DB");
+
+        res.status(200).json({ message: "Image deleted successfully"});
+    } catch (err) {
+        console.error(" Delete image error: ", err.message);
+        res.status(500).json({message: "Failed to delete image"});
+    }
+};
+
