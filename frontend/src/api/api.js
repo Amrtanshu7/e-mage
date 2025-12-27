@@ -1,21 +1,16 @@
-export async function uploadImage(imageFile, filter){
-    
-    const formData = new FormData();
-    formData.append("image", imageFile);
+import axios from "axios";
 
-    const response = await fetch(
-        `http://localhost:8080/api/upload-to-cpp?filter=${filter}`,
-        {
-            method: "POST",
-            body: formData
-        }
-    );
+const api = axios.create({
+    baseURL: "http://localhost:8080",
+});
 
-    if (!response.ok) {
-        throw new Error("Image processing failed");
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if(token)
+    {
+        config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+});
 
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
-
-}
+export default api;
