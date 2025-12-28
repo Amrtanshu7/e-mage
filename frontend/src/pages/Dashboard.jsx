@@ -80,7 +80,7 @@ const Dashboard = () => {
         <>
         <Header/>
         <div style={{padding:"20px"}}>
-            <h2>Dashboard</h2>
+            <h2 className="text-4xl font-bold text-blue-600">Dashboard</h2>
             <p>Upload and manage your images here.</p>
 
             <UploadForm onUploadSuccess={(imageUrl) => {
