@@ -18,6 +18,43 @@ exports.getUserImages = async(req,res) => {
     }
 };
 
+exports.previewImage = async (req,res) => {
+    try{
+        console.log("Image preview request received");
+
+        const userId = req.user.userId;
+        const imageId = req.params.id;
+
+        console.log("user id:",userId);
+        console.log("imageId:",imageId);
+
+        const image = await Image.findOne({ _id: imageId, userId});
+
+        if(!image) {
+            console.log("Image not found or unauthorized");
+            return res.status(404).json({ message: "Image not found "});
+        }
+
+        const filePath = path.join(__dirname,"..","..",image.processedImagePath);
+        console.log("resolved preview path:", filePath);
+
+        if(!fs.existsSync(filePath))
+        {
+            console.log("processed image missing on disk");
+            return res.status(404).json({message: "File not found"});
+        }
+
+        res.setHeader("Content-Type", "image/jpeg");
+
+        fs.createReadStream(filePath).pipe(res);
+
+    } catch(err) {
+        console.error("Preview error: ",err.message);
+        res.status(500).json({message: "Failed to load image preview"});
+    }
+};
+
+
 exports.downloadImage = async (req, res) => {
     try{
         console.log("download request received ");

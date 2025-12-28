@@ -13,6 +13,9 @@ cpp-service/bin/
 *.o
 *.out
 
+#Uploaded images
+backend-node/uploads
+
 # macOS
 .DS_Store
 
