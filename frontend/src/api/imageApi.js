@@ -32,3 +32,15 @@ export async function fetchImagePreview(imageId) {
     );
     return response.data;
 }
+
+export async function downloadImage(imageId) {
+    const response = await api.get(
+        `/api/images/${imageId}/download`,
+        { responseType : "blob" }
+    );
+    return response.data;
+}
+
+export async function deleteImage(imageId) {
+    await api.delete(`/api/images/${imageId}`);
+}

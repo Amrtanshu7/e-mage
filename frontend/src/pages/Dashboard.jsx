@@ -1,7 +1,7 @@
 import { useEffect,useState } from "react";
 import Header from "../components/Header";
 import UploadForm from "../components/UploadForm";
-import { fetchImages,fetchImagePreview} from "../api/imageApi";
+import { fetchImages,fetchImagePreview,downloadImage,deleteImage} from "../api/imageApi";
 
 const Dashboard = () => {
 
@@ -36,6 +36,43 @@ const Dashboard = () => {
             console.error("failed to fetch Images",err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownload = async (imageId) => {
+
+        try{
+            const blob = await downloadImage(imageId);
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "processed-image.jpg";
+            a.click();
+
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download failed", err);
+        }
+    };
+
+    const handleDelete = async(imageId) => {
+        const confirmDelete = window.confirm("Are you want to delete this image?");
+
+        if(!confirmDelete) return;
+
+        try{
+            await deleteImage(imageId);
+
+            setImages((prev) => prev.filter((img) => img._id !== imageId));
+
+            setPreviewUrls((prev) => {
+                const copy = {...prev };
+                delete copy[imageId];
+                return copy;
+            });
+        } catch (err) {
+            console.error("Delete failed", err);
         }
     };
 
@@ -86,6 +123,16 @@ const Dashboard = () => {
                             <b>Created:</b>{" "}
                             {new Date(img.createdAt).toLocaleString()}
                         </p>
+                        <div style={styles.actions}>
+                            <button onClick={() => handleDownload(img._id)}>
+                                Download
+                            </button>
+                            <button
+                                onClick={() => handleDelete(img._id)}
+                                style={{ color: "red" }}>
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -112,7 +159,12 @@ const styles = {
     objectFit: "cover",
     borderRadius: "4px",
     marginBottom: "8px"
-}
+    },
+    actions: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "8px"
+    }
 };
 
 export default Dashboard;
