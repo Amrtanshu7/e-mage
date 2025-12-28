@@ -19,3 +19,16 @@ export async function uploadImage(imageFile,filter) {
 
     return URL.createObjectURL(response.data);
 }
+
+export async function fetchImages() {
+    const response = await api.get("/api/images");
+    return response.data.images;
+}
+
+export async function fetchImagePreview(imageId) {
+    const response = await api.get(
+        `/api/images/${imageId}/preview`,
+        { responseType: "blob" }
+    );
+    return response.data;
+}
