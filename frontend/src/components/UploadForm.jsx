@@ -1,5 +1,7 @@
 import { useState } from "react";
 import {uploadImage } from "../api/imageApi";
+import toast from "react-hot-toast";
+
 
 const UploadForm = ({ onUploadSuccess }) => {
 
@@ -21,9 +23,11 @@ const UploadForm = ({ onUploadSuccess }) => {
         try{
             const imageUrl = await uploadImage(file,filter);
             onUploadSuccess(imageUrl);
+            toast.success("Image processed successfully");
         } catch(err) {
             console.error("Upload error:", err);
             setError("Image upload failed");
+            toast.error("Image upload failed");
         } finally {
             setLoading(false);
         }

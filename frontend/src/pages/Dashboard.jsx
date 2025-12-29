@@ -2,6 +2,7 @@ import { useEffect,useState } from "react";
 import Header from "../components/Header";
 import UploadForm from "../components/UploadForm";
 import { fetchImages,fetchImagePreview,downloadImage,deleteImage} from "../api/imageApi";
+import toast from "react-hot-toast";
 
 const Dashboard = () => {
 
@@ -48,6 +49,7 @@ const Dashboard = () => {
             const a = document.createElement("a");
             a.href = url;
             a.download = "processed-image.jpg";
+            toast.success("Download started");
             a.click();
 
             window.URL.revokeObjectURL(url);
@@ -63,7 +65,7 @@ const Dashboard = () => {
 
         try{
             await deleteImage(imageId);
-
+            toast.success("Image deleted");
             setImages((prev) => prev.filter((img) => img._id !== imageId));
 
             setPreviewUrls((prev) => {
@@ -73,6 +75,7 @@ const Dashboard = () => {
             });
         } catch (err) {
             console.error("Delete failed", err);
+            toast.error("Failed to delete image");
         }
     };
 
