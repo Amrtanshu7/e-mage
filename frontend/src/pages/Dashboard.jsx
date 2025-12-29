@@ -77,94 +77,150 @@ const Dashboard = () => {
     };
 
     return (
-        <>
-        <Header/>
-        <div style={{padding:"20px"}}>
-            <h2 className="text-4xl font-bold text-blue-600">Dashboard</h2>
-            <p>Upload and manage your images here.</p>
+    <>
+        <Header />
 
-            <UploadForm onUploadSuccess={(imageUrl) => {
-                setProcessedImage(imageUrl);
-                loadImages();
-            }}
-            />
+        <main className="min-h-screen bg-slate-100">
+            <div className="max-w-7xl mx-auto px-6 py-8">
 
-            {processedImage && (
-                <div style={{marginTop:"20px"}}>
-                    <h3>Latest Processed Image</h3>
-                    <img src={processedImage} alt="Processed" style={{maxWidth:"100%"}}/>
+                {/* Page Title */}
+                <div className="text-center">
+                    <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+                        Dashboard
+                    </h2>
+                    <p className="text-slate-600 mt-1">
+                        Upload and manage your images here.
+                    </p>
                 </div>
-            )}
 
-            <hr style ={{ margin:"30px 0" }}/>
+                {/* Upload Section (CENTERED) */}
+                <div className="mt-8 flex justify-center">
+                    <div className="w-full max-w-md">
+                        <UploadForm
+                            onUploadSuccess={(imageUrl) => {
+                                setProcessedImage(imageUrl);
+                                loadImages();
+                            }}
+                        />
+                    </div>
+                </div>
 
-            <h3> Your Images </h3>
+                {/* Latest Image */}
+                {processedImage && (
+                    <div className="mt-10">
+                        <h3 className="text-lg font-medium text-slate-900 mb-3">
+                            Latest Processed Image
+                        </h3>
+                        <img
+                            src={processedImage}
+                            alt="Processed"
+                            className="max-w-full rounded-lg border border-slate-300"
+                        />
+                    </div>
+                )}
 
-            {loading && <p>Loading Images...</p>}
+                <hr className="my-10 border-slate-300" />
 
-            {!loading && images.length === 0 && (
-                <p>No images uploaded yet.</p>
-            )}
+                {/* Images Section */}
+                <h3 className="text-lg font-medium text-slate-900">
+                    Your Images
+                </h3>
 
-            <div style = {styles.grid}>
-                {images.map((img) => (
-                    <div key={img._id} style = {styles.card}>
-                            {previewUrls[img._id] ? (
-                                <img
-                                    src={previewUrls[img._id]}
-                                    alt="Processed"
-                                    style={styles.image}
-                                />
-                            ) : (
-                                <p>Loading preview...</p>
-                            )}
-                        <p><b>Filter:</b>{img.filterType}</p>
-                        <p>
-                            <b>Created:</b>{" "}
+                {loading && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="bg-white border border-slate-200 rounded-xl p-3 animate-pulse"
+                            >
+                                <div className="h-40 bg-slate-200 rounded-md mb-3" />
+                                <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
+                                <div className="h-3 bg-slate-200 rounded w-1/2" />
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {!loading && images.length === 0 && (
+                    <div className="mt-10 flex flex-col items-center text-center bg-white border border-slate-200 rounded-xl p-8">
+                        <div className="text-4xl mb-4">🖼️</div>
+                        <h4 className="text-lg font-semibold text-slate-900">
+                            No images yet
+                        </h4>
+                        <p className="text-slate-600 mt-2 max-w-sm">
+                            Upload your first image to see it processed and listed here.
+                        </p>
+                    </div>
+                )}
+
+
+                {/* Image Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+                    {images.map((img) => (
+                    <div
+                    key={img._id}
+                    className="
+                        group bg-white border border-slate-200 rounded-xl
+                        shadow-sm hover:shadow-md
+                        transition-all duration-200
+                        overflow-hidden
+                    "
+                    >
+                    {/* Image */}
+                    {previewUrls[img._id] ? (
+                        <div className="relative">
+                            <img
+                                src={previewUrls[img._id]}
+                                alt="Processed"
+                                className="w-full h-40 object-cover"
+                            />
+
+                            {/* Hover Overlay */}
+                            <div className="
+                                absolute inset-0 bg-black/40
+                                opacity-0 group-hover:opacity-100
+                                transition-opacity
+                                flex items-center justify-center gap-4
+                            ">
+                                <button
+                                    onClick={() => handleDownload(img._id)}
+                                    className="bg-white text-slate-900 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-slate-100"
+                                >
+                                    Download
+                                </button>
+
+                                <button
+                                    onClick={() => handleDelete(img._id)}
+                                    className="bg-red-600 text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-red-700"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                        ) : (
+                        <div className="h-40 flex items-center justify-center text-sm text-slate-500">
+                            Loading preview...
+                        </div>
+                    )}
+
+                    {/* Metadata */}
+                    <div className="p-3">
+                        <p className="text-sm text-slate-700">
+                            <span className="font-medium">Filter:</span> {img.filterType}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
                             {new Date(img.createdAt).toLocaleString()}
                         </p>
-                        <div style={styles.actions}>
-                            <button onClick={() => handleDownload(img._id)}>
-                                Download
-                            </button>
-                            <button
-                                onClick={() => handleDelete(img._id)}
-                                style={{ color: "red" }}>
-                                Delete
-                            </button>
-                        </div>
                     </div>
-                ))}
-            </div>
-        </div>
-        </>
-    );
-};
+                </div>
 
-const styles = {
-    grid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-        gap: "16px",
-        marginTop: "16px"
-    },
-    card: {
-        border: "1px solid #ddd",
-        padding: "10px",
-        borderRadius: "6px"
-    },
-    image: {
-    width: "100%",
-    height: "150px",
-    objectFit: "cover",
-    borderRadius: "4px",
-    marginBottom: "8px"
-    },
-    actions: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: "8px"
-    }
+                    ))}
+                </div>
+            </div>
+        </main>
+    </>
+);
+
 };
 
 export default Dashboard;
