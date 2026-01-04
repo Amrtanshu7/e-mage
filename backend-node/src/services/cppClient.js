@@ -1,6 +1,6 @@
 const axios = require("axios");
-
-const CPP_SERVICE_URL = "http://localhost:8000";
+require("dotenv").config();
+const CPP_SERVICE_URL = process.env.CPP_SERVICE_URL;
 
 exports.processImage = async (imageData) => {
     try{

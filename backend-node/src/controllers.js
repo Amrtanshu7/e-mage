@@ -1,9 +1,11 @@
+require("dotenv").config();
 const { processImage } = require("./services/cppClient");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const CPP_SERVICE_URL = "http://localhost:8000";
+const CPP_SERVICE_URL = process.env.CPP_SERVICE_URL;
 const Image = require("../src/models/Image")
+
 
 exports.uploadAndSendToCpp = async (req,res) => {
     console.log("upload and send to c++ request received ");
