@@ -24,3 +24,8 @@ backend-node/uploads
 
 # VS Code
 .vscode/
+
+#env files
+.env
+.env.local
+.env.docker

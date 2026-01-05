@@ -7,21 +7,21 @@ services:
     restart: always
     volumes:
       - mongo_data:/data/db
-    ports:
-      - "27017:27017"
 
   backend:
     build: ./backend-node
     container_name: emage-backend
     restart: always
     env_file:
-      - ./backend-node/.env
+      - ./backend-node/.env.docker
     depends_on:
       - mongo
       - cpp-service
     ports:
       - "8080:8080"
-      
+    volumes:
+      - uploads_data:/app/uploads
+
   frontend:
     build: ./frontend
     container_name: emage-frontend
@@ -30,8 +30,8 @@ services:
       - backend
     ports:
       - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://backend:8080
+    env_file:
+      - ./frontend/.env.docker
 
   cpp-service:
     build: ./cpp-service
@@ -42,3 +42,4 @@ services:
 
 volumes:
   mongo_data:
+  uploads_data:
