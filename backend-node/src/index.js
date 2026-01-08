@@ -1,4 +1,5 @@
 require("dotenv").config();
+const mongoose = require("mongoose");
 const express  = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
@@ -13,6 +14,24 @@ app.use(express.json());
 
 //Connect DB
 connectDB();
+
+
+app.get("/health", (req,res) => {
+    res.status(200).json({
+        status: "ok",
+        service: "backend",
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.get("/health/db",(req,res) => {
+    const state = mongoose.connection.readyState;
+
+    res.status(state === 1 ? 200 : 500).json({
+        status: state === 1 ? "ok" : "down",
+        mongoState: state
+    });
+});
 
 //routes
 app.use("/api",routes);
