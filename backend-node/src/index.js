@@ -42,5 +42,5 @@ app.get("/",(req,res)=>{
     res.send("Backend up!");
 });
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT,() => console.log(`Backend server running on ${PORT}`));
