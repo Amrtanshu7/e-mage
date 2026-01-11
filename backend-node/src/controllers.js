@@ -1,56 +1,51 @@
 require("dotenv").config();
 const { processImage } = require("./services/cppClient");
-const fs = require("fs");
-const path = require("path");
 const axios = require("axios");
 const CPP_SERVICE_URL = process.env.CPP_SERVICE_URL;
 const Image = require("../src/models/Image")
+const { PutObjectCommand } = require("@aws-sdk/client-s3");
+const s3 = require("../services/s3");
 
 
-exports.uploadAndSendToCpp = async (req,res) => {
-    console.log("upload and send to c++ request received ");
+exports.uploadAndSendToCpp = async (req, res) => {
+    console.log("Upload & process request");
+
     const userId = req.user.userId;
     const filterType = req.query.filter || "grayscale";
-    console.log("requested filter:", filterType);
 
-    if(!req.file)
-    {
-        return res.status(400).json ({message: "No image uploaded"});
-    }
-    
-    //original image
-
-    const originalImagePath = req.file.path;
-    console.log("image uploaded by user:",userId);
-    console.log("original image path:",originalImagePath);
-
-    //absolute path for reading
-    const imagePath = path.join(__dirname,"..",originalImagePath);
-
-    console.log("reading image from disk:",imagePath);
-
-    const imageBuffer = fs.readFileSync(imagePath);
-
-    console.log("Image buffer size(bytes):",imageBuffer.length);
-
-    //prepare processed image path
-
-    const processedDir = path.join("uploads","processed");
-    if( !fs.existsSync(processedDir))
-    {
-        fs.mkdirSync(processedDir, { recursive : true});
+    if (!req.file) {
+        return res.status(400).json({ message: "No image uploaded" });
     }
 
-    const processedImageFilename = `processed-${Date.now()}.jpg`;
-    const processedImagePath = path.join(processedDir,processedImageFilename);
+    console.log("User:", userId);
+    console.log("Filter:", filterType);
 
-    try{
+    try {
+        // Multer memory buffer
+        const originalBuffer = req.file.buffer;
+
+        console.log("Original image size:", originalBuffer.length);
+
+        // Unique keys in S3
+        const originalKey = `original/${userId}/${Date.now()}-${req.file.originalname}`;
+        const processedKey = `processed/${userId}/${Date.now()}.jpg`;
+
+        // Upload original to S3
+        await s3.send(new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET,
+            Key: originalKey,
+            Body: originalBuffer,
+            ContentType: req.file.mimetype
+        }));
+
+        console.log("Uploaded original to S3:", originalKey);
+
+        // Send to C++ for processing
         const cppResponse = await axios.post(
-            `${CPP_SERVICE_URL}/process-image`,
-            imageBuffer,
+            `${process.env.CPP_SERVICE_URL}/process-image`,
+            originalBuffer,
             {
-                headers: 
-                {
+                headers: {
                     "Content-Type": "application/octet-stream",
                     "X-Image-Filter": filterType
                 },
@@ -59,40 +54,41 @@ exports.uploadAndSendToCpp = async (req,res) => {
         );
 
         const processedBuffer = Buffer.from(cppResponse.data);
+        console.log("Processed bytes:", processedBuffer.length);
 
-        console.log("bytes received back from c++:", processedBuffer.length);
+        // Upload processed image to S3
+        await s3.send(new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET,
+            Key: processedKey,
+            Body: processedBuffer,
+            ContentType: "image/jpeg"
+        }));
 
-        //save the processed image 
-        fs.writeFileSync(processedImagePath, processedBuffer);
-        console.log("processed image saved at:", processedImagePath);
+        console.log("Uploaded processed to S3:", processedKey);
 
-        //save metadata to db
-
+        // Save metadata to Mongo
         const imageDoc = new Image({
             userId,
-            originalImagePath,
-            processedImagePath,
+            originalImagePath: originalKey,
+            processedImagePath: processedKey,
             filterType
         });
 
         await imageDoc.save();
-        console.log("image metadata saved for user:", userId);
+        console.log("Saved DB record");
 
-        /* Send processed image back to client */
-
+        // Send processed image back to client
         res.set({
             "Content-Type": "image/jpeg",
-            "Content-Disposition": "attachement; filename=processed.jpg",
+            "Content-Disposition": "inline; filename=processed.jpg",
             "Content-Length": processedBuffer.length
         });
 
         res.send(processedBuffer);
 
-        console.log("C++ responded successfully");
-
     } catch (err) {
-        console.error("error sending image to c++:",err.message);
-        res.status(500).json({message:" image processing failed "});
+        console.error("Upload & process error:", err);
+        res.status(500).json({ message: "Image processing failed" });
     }
 };
 

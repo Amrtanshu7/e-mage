@@ -1,6 +1,6 @@
 const Image = require("../models/Image");
-const path = require("path");
-const fs = require("fs");
+const { GetObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const s3 = require("../services/s3");
 
 exports.getUserImages = async(req,res) => {
     try{
@@ -18,135 +18,96 @@ exports.getUserImages = async(req,res) => {
     }
 };
 
-exports.previewImage = async (req,res) => {
-    try{
+exports.previewImage = async (req, res) => {
+    try {
         console.log("Image preview request received");
 
         const userId = req.user.userId;
         const imageId = req.params.id;
 
-        console.log("user id:",userId);
-        console.log("imageId:",imageId);
-
-        const image = await Image.findOne({ _id: imageId, userId});
-
-        if(!image) {
-            console.log("Image not found or unauthorized");
-            return res.status(404).json({ message: "Image not found "});
+        const image = await Image.findOne({ _id: imageId, userId });
+        if (!image) {
+            return res.status(404).json({ message: "Image not found" });
         }
 
-        const filePath = path.join(__dirname,"..","..",image.processedImagePath);
-        console.log("resolved preview path:", filePath);
+        console.log("Streaming from S3:", image.processedImagePath);
 
-        if(!fs.existsSync(filePath))
-        {
-            console.log("processed image missing on disk");
-            return res.status(404).json({message: "File not found"});
-        }
+        const command = new GetObjectCommand({
+            Bucket: process.env.AWS_BUCKET,
+            Key: image.processedImagePath
+        });
+
+        const s3Object = await s3.send(command);
 
         res.setHeader("Content-Type", "image/jpeg");
+        s3Object.Body.pipe(res);
 
-        fs.createReadStream(filePath).pipe(res);
-
-    } catch(err) {
-        console.error("Preview error: ",err.message);
-        res.status(500).json({message: "Failed to load image preview"});
+    } catch (err) {
+        console.error("Preview error:", err);
+        res.status(500).json({ message: "Failed to load image preview" });
     }
 };
 
 
 exports.downloadImage = async (req, res) => {
-    try{
-        console.log("download request received ");
+    try {
         const userId = req.user.userId;
         const imageId = req.params.id;
 
-        console.log("userid:",userId);
-        console.log("imageId:",imageId);
+        const image = await Image.findOne({ _id: imageId, userId });
+        if (!image) {
+            return res.status(404).json({ message: "Image not found" });
+        }
 
-        const image = await Image.findOne({
-            _id: imageId,
-            userId
+        console.log("Downloading from S3:", image.processedImagePath);
+
+        const command = new GetObjectCommand({
+            Bucket: process.env.AWS_BUCKET,
+            Key: image.processedImagePath
         });
 
-        if(!image){
-            console.log("iamge not found in db or doesnt belong to this user");
-            return res.status(404).json({
-                message: "Image not found"
-            });
-        }
-        
-        console.log("image found in db");
-        console.log("Processed image path (DB):", image.processedImagePath);
+        const s3Object = await s3.send(command);
 
-        const filePath = path.join(__dirname,"..","..",image.processedImagePath);
+        res.setHeader("Content-Disposition", "attachment; filename=processed.jpg");
+        res.setHeader("Content-Type", "image/jpeg");
 
-        console.log("Resolved absolute file path:", filePath);
+        s3Object.Body.pipe(res);
 
-        if(!fs.existsSync(filePath)) {
-            console.log("File does not exist on disk");
-            return res.status(404).json({message: "Processed image not found"});
-        }
-        
-        console.log("sending file for download ");
-        res.download(filePath);
-    } catch(err) {
-        console.error("Download error:",err.message);
-        res.status(500).json({message: "Failed to download image"});
-    }
-}
-
-exports.deleteImage = async (req,res) => {
-    try{
-        console.log("delete image request received ");
-
-        const userId = req.user.userId;
-        const imageId = req.params.id;
-
-        console.log("user id:",userId);
-        console.log("image id:",imageId);
-
-        const image = await Image.findOne({
-            _id: imageId,
-            userId
-        });
-
-        if(!image){
-            console.log("image not found or not owned by user");
-            return res.status(404).json({message: "Image not found"});
-        }
-
-        console.log("image found in db");
-        console.log("db original path:",image.originalImagePath);
-        console.log("db processedImagePath", image.processedImagePath);
-
-        console.log("__dirname:",__dirname);
-
-        const originalPath = path.join(__dirname,"..","..",image.originalImagePath);
-        const processedPath = path.join(__dirname,"..","..",image.processedImagePath);
-
-        console.log("Resolved originalPath:", originalPath);
-        console.log("Resolved processedPath:", processedPath);
-
-        if(fs.existsSync(originalPath))
-        {
-            fs.unlinkSync(originalPath);
-            console.log("deleted original image:",originalPath);
-        }
-
-        if(fs.existsSync(processedPath)) {
-            fs.unlinkSync(processedPath);
-            console.log("Deleted processed image :",processedPath);
-        }
-
-        await Image.deleteOne({_id: imageId});
-
-        console.log("image record deleted from DB");
-
-        res.status(200).json({ message: "Image deleted successfully"});
     } catch (err) {
-        console.error(" Delete image error: ", err.message);
-        res.status(500).json({message: "Failed to delete image"});
+        console.error("Download error:", err);
+        res.status(500).json({ message: "Failed to download image" });
+    }
+};
+
+exports.deleteImage = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const imageId = req.params.id;
+
+        const image = await Image.findOne({ _id: imageId, userId });
+        if (!image) {
+            return res.status(404).json({ message: "Image not found" });
+        }
+
+        console.log("Deleting from S3:", image.originalImagePath, image.processedImagePath);
+
+        await s3.send(new DeleteObjectCommand({
+            Bucket: process.env.AWS_BUCKET,
+            Key: image.originalImagePath
+        }));
+
+        await s3.send(new DeleteObjectCommand({
+            Bucket: process.env.AWS_BUCKET,
+            Key: image.processedImagePath
+        }));
+
+        await Image.deleteOne({ _id: imageId });
+
+        res.status(200).json({ message: "Image deleted successfully" });
+
+    } catch (err) {
+        console.error("Delete error:", err);
+        res.status(500).json({ message: "Failed to delete image" });
     }
 };
 
