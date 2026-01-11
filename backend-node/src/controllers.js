@@ -4,7 +4,7 @@ const axios = require("axios");
 const CPP_SERVICE_URL = process.env.CPP_SERVICE_URL;
 const Image = require("../src/models/Image")
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
-const s3 = require("../services/s3");
+const s3 = require("../src/services/s3");
 
 
 exports.uploadAndSendToCpp = async (req, res) => {
