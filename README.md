@@ -61,6 +61,10 @@ Emage follows a microservices-based architecture:
 
 5. **MongoDB Atlas**
    - Stores user data and image metadata
+
+## Architecture Diagram
+
+![Emage Architecture](docs/architecture.png)
   
 ## Deployment
 
